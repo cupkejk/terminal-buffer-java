@@ -20,4 +20,42 @@ public class Line {
             cells.add(new Cell());
         }
     }
+
+    // Deep copy
+    public Line(Line other) {
+        this.cells = new ArrayList<>();
+        for(int i = 0; i < other.getCells().size(); i++) {
+            this.cells.add(new Cell(other.getCellAt(i)));
+        }
+    }
+
+    public void setCellAt(int index, char character, Color fgColor, Color bgColor, Set<Style> styles) {
+        Cell current = this.cells.get(index);
+        current.setCharacter(character);
+        current.setFgColor(fgColor);
+        current.setBgColor(bgColor);
+        current.setStyles(styles);
+    }
+
+    public Cell getCellAt(int index) {
+        return this.cells.get(index);
+    }
+
+    public List<Cell> getCells() {
+        return cells;
+    }
+
+    public String getAsString() {
+        StringBuilder text = new StringBuilder();
+        for(Cell cell : this.cells) {
+            char character = cell.getCharacter();
+            if(character == '\0') {
+                text.append(' ');
+            }
+            else {
+                text.append(character);
+            }
+        }
+        return text.toString() + '\n';
+    }
 }
