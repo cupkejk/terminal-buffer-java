@@ -1,6 +1,7 @@
 package org.terminal;
 
 import java.lang.*;
+import java.util.*;
 
 public class TerminalBuffer {
     private final int screenWidth;
@@ -10,6 +11,13 @@ public class TerminalBuffer {
     private int cursorX;
     private int cursorY;
 
+    private Color fgColor;
+    private Color bgColor;
+    private Set<Style> styles;
+
+    private List<Line> screen;
+    private Deque<Line> scrollback;
+
     public TerminalBuffer(int width, int height, int scrollbackLines) {
         this.screenWidth = width;
         this.screenHeight = height;
@@ -17,6 +25,16 @@ public class TerminalBuffer {
 
         this.cursorX = 0;
         this.cursorY = 0;
+
+        this.fgColor = Color.DEFAULT;
+        this.bgColor = Color.DEFAULT;
+        this.styles = Set.of();
+
+        this.screen = new ArrayList<>();
+        for(int i = 0; i < height; i++) {
+            this.screen.add(new Line(width));
+        }
+        this.scrollback = new ArrayDeque<>();
     }
 
     public void moveCursor(int x, int y) {
