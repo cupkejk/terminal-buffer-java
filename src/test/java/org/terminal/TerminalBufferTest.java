@@ -3,7 +3,7 @@ package org.terminal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.w3c.dom.Attr;
-
+import org.jspecify.annotations.NonNull;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
