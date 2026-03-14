@@ -78,5 +78,9 @@ public class Cell {
     public Boolean isEmpty() {
         return this.isCellEmpty;
     }
+
+    public Attributes getAttributes() {
+        return new Attributes(this.getFgColor(), this.getBgColor(), this.getStyles(), this.isEmpty());
+    }
 }
 

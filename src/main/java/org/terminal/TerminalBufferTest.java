@@ -163,4 +163,28 @@ class TerminalBufferTest {
 
         assertEquals(testString, buffer.getAllText());
     }
+
+    @Test
+    @DisplayName("get line from screen")
+    void lineFromScreenTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 5);
+
+        buffer.write("Hello");
+        String testString = "Hello\n";
+
+        assertEquals(testString, buffer.getLineAsString(0));
+    }
+
+    @Test
+    @DisplayName("get line from scrollback")
+    void lineFromScrollbackTest() {
+        TerminalBuffer buffer = new TerminalBuffer(6, 3, 5);
+
+        buffer.write("Hello1");
+        buffer.write("Hello2");
+        buffer.write("Hello3");
+        String testString = "Hello1\n";
+
+        assertEquals(testString, buffer.getLineAsString(0));
+    }
 }

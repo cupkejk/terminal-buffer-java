@@ -18,7 +18,7 @@ public class TerminalBuffer {
     private Set<Style> styles;
 
     private ArrayList<Line> screen;
-    private Deque<Line> scrollback;
+    private LinkedList<Line> scrollback;
     private LinkedList<Line> overflow;
 
     public TerminalBuffer(int width, int height, int scrollbackLines) {
@@ -37,7 +37,7 @@ public class TerminalBuffer {
         for(int i = 0; i < height; i++) {
             this.screen.add(new Line(width));
         }
-        this.scrollback = new ArrayDeque<>();
+        this.scrollback = new LinkedList<>();
         this.overflow = new LinkedList<>();
     }
 
@@ -184,7 +184,6 @@ public class TerminalBuffer {
             Cell cellFrom = this.screen.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
 
             this.screen.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
-            return;
         }
         else if(to >= this.screenWidth*this.screenHeight && from < this.screenWidth*this.screenHeight) {
             to -= this.screenWidth*this.screenHeight;
@@ -203,8 +202,6 @@ public class TerminalBuffer {
 
             this.overflow.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
         }
-
-
     }
 
     private void moveBlock(int spaces, int from, int to) {
@@ -280,11 +277,101 @@ public class TerminalBuffer {
         }
     }
 
-    public void fillLine(char character) {
+    public void fillLineAt(char character, int y) {
         this.screen.get(cursorY).fill(character, fgColor, bgColor, styles);
     }
 
-    public void fillLine() {
+    public void fillLineAt(int y) {
         this.screen.get(cursorY).fillEmpty(fgColor, bgColor, styles);
+    }
+
+    public void fillLine(char character) {
+        this.fillLineAt(character, this.cursorY);
+    }
+
+    public void fillLine() {
+        this.fillLineAt(this.cursorY);
+    }
+
+    public void insertLine() {
+        this.scrollbackOnce();
+    }
+
+    public void clearScreen() {
+        for(int i = 0; i < this.screenHeight; i++) {
+            fillLineAt(i);
+        }
+    }
+
+    public void clearScreenScrollback() {
+        int linesToScroll = 0;
+        for(int i = 0; i < this.screenHeight; i++) {
+            for(int j = 0; j < this.screenWidth; j++) {
+                if (this.screen.get(i).getCellAt(i).isEmpty()) linesToScroll = i;
+            }
+        }
+        for(int i = 0; i < linesToScroll; i++) {
+            scrollbackOnce();
+        }
+    }
+
+    public String getLineAsString(int lineNum) {
+        if(!this.scrollback.isEmpty()) {
+            if(lineNum >= 0 && lineNum <= this.scrollback.size()) {
+                return this.scrollback.get(lineNum).getAsString();
+            }
+            else if(lineNum > this.scrollback.size() && lineNum < this.scrollback.size()+this.screen.size()) {
+                return this.screen.get(lineNum - this.scrollback.size()).getAsString();
+            }
+            else {
+                return "";
+            }
+        }
+        else {
+            if(lineNum >= 0 && lineNum < this.screen.size()) {
+                return this.screen.get(lineNum).getAsString();
+            }
+            else {
+                return "";
+            }
+        }
+    }
+
+    public char getCharacter(int x, int y) {
+        if(!this.scrollback.isEmpty()) {
+            if (x >= 0 && x < this.screenWidth) {
+                if (y >= 0 && y <= this.scrollback.size()) {
+                    return this.screen.get(y).getCellAt(x).getCharacter();
+                } else if (y > this.scrollback.size() && y < this.scrollback.size() + this.screen.size()) {
+                    return this.screen.get(y).getCellAt(x).getCharacter();
+                } else return '\0';
+            } else return '\0';
+        }
+        else {
+            if (x >= 0 && x < this.screenWidth) {
+                if (y >= 0 && y <= this.screen.size()) {
+                    return this.screen.get(y).getCellAt(x).getCharacter();
+                } else return '\0';
+            } else return '\0';
+        }
+    }
+
+    public Optional<Attributes> getCharacterAttributes(int x, int y) {
+        if(!this.scrollback.isEmpty()) {
+            if (x >= 0 && x < this.screenWidth) {
+                if (y >= 0 && y <= this.scrollback.size()) {
+                    return Optional.of(this.screen.get(y).getCellAt(x).getAttributes());
+                } else if (y > this.scrollback.size() && y < this.scrollback.size() + this.screen.size()) {
+                    return Optional.of(this.screen.get(y).getCellAt(x).getAttributes());
+                } else return Optional.empty();
+            } else return Optional.empty();
+        }
+        else {
+            if (x >= 0 && x < this.screenWidth) {
+                if (y >= 0 && y <= this.screen.size()) {
+                    return Optional.of(this.screen.get(y).getCellAt(x).getAttributes());
+                } else return Optional.empty();
+            } else return Optional.empty();
+        }
     }
 }
