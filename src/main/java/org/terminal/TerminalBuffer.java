@@ -133,7 +133,7 @@ public class TerminalBuffer {
 
         this.screen.removeFirst();
         if(this.overflow.isEmpty()) {
-            this.screen.add(new Line(this.screenWidth));
+            this.screen.add(new Line(this.screenWidth, fgColor, bgColor, styles));
         }
         else {
             this.screen.add(new Line(this.overflow.getFirst()));
@@ -273,7 +273,7 @@ public class TerminalBuffer {
 
     private void insertAdditionalLines(int n) {
         for(int i = 0; i < n; i++) {
-            this.overflow.add(new Line(this.screenWidth));
+            this.overflow.add(new Line(this.screenWidth, fgColor, bgColor, styles));
         }
     }
 
@@ -301,6 +301,7 @@ public class TerminalBuffer {
         for(int i = 0; i < this.screenHeight; i++) {
             fillLineAt(i);
         }
+        this.setCursorPosition(0, 0);
     }
 
     public void clearScreenScrollback() {
@@ -313,6 +314,7 @@ public class TerminalBuffer {
         for(int i = 0; i < linesToScroll; i++) {
             scrollbackOnce();
         }
+        this.setCursorPosition(0, 0);
     }
 
     public String getLineAsString(int lineNum) {

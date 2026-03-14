@@ -10,7 +10,7 @@ public class Line {
     public Line(int width, Color fgColor, Color bgColor, Set<Style> styles) {
         cells = new ArrayList<>();
         for(int i = 0; i < width; i++) {
-            cells.add(new Cell(fgColor, bgColor, styles));
+            cells.add(new Cell(fgColor, bgColor, Set.copyOf(styles)));
         }
     }
 

@@ -2,6 +2,10 @@ package org.terminal;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.w3c.dom.Attr;
+
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TerminalBufferTest {
@@ -105,6 +109,34 @@ class TerminalBufferTest {
     }
 
     @Test
+    @DisplayName("basic writing test with styles added")
+    void writingStylesTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
+
+        buffer.setFgColor(Color.BLACK);
+        buffer.setBgColor(Color.WHITE);
+        buffer.setStyles(Style.ITALIC, Style.UNDERLINE);
+        buffer.write("Hello");
+        Attributes attr = new Attributes(Color.BLACK, Color.WHITE, Set.of(Style.ITALIC, Style.UNDERLINE), false);
+
+        assertEquals(attr, buffer.getCharacterAttributes(0, 0).get());
+    }
+
+    @Test
+    @DisplayName("basic inserting test with styles added")
+    void insertingStylesTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
+
+        buffer.setFgColor(Color.BLACK);
+        buffer.setBgColor(Color.WHITE);
+        buffer.setStyles(Style.ITALIC, Style.UNDERLINE);
+        buffer.insert("Hjdoiasjidja");
+        Attributes attr = new Attributes(Color.BLACK, Color.WHITE, Set.of(Style.ITALIC, Style.UNDERLINE), false);
+
+        assertEquals(attr, buffer.getCharacterAttributes(0, 0).get());
+    }
+
+    @Test
     @DisplayName("basic writing scrollback test")
     void writingScrollbackTest() {
         TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
@@ -187,4 +219,52 @@ class TerminalBufferTest {
 
         assertEquals(testString, buffer.getLineAsString(0));
     }
+
+    @Test
+    @DisplayName("line filling test")
+    void fillingLineTest() {
+        TerminalBuffer buffer = new TerminalBuffer(6, 3, 5);
+
+        buffer.setFgColor(Color.BLUE);
+        buffer.write("Hello1");
+        buffer.fillLine('H');
+        buffer.moveCursorDown(1);
+        buffer.fillLine();
+
+        String testString = "Hello1\nHHHHHH\n      \n";
+        assertEquals(testString, buffer.getAllText());
+
+        Attributes attr = new Attributes(Color.BLUE, Color.DEFAULT, Set.of(), false);
+        assertEquals(attr, buffer.getCharacterAttributes(0, 0).get());
+        assertEquals(attr, buffer.getCharacterAttributes(0, 1).get());
+        Attributes attr2 = new Attributes(Color.BLUE, Color.DEFAULT, Set.of(), true);
+        assertEquals(attr2, buffer.getCharacterAttributes(0, 2).get());
+    }
+
+    @Test
+    @DisplayName("screen clearing")
+    void clearTest() {
+        TerminalBuffer buffer = new TerminalBuffer(6, 3, 5);
+
+        buffer.setFgColor(Color.BLUE);
+        buffer.write("Hello");
+        buffer.clearScreen();
+        Attributes attr = new Attributes(Color.BLUE, Color.DEFAULT, Set.of(), true);
+        assertEquals(attr, buffer.getCharacterAttributes(0, 0).get());
+        assertEquals('\0', buffer.getCharacter(0, 0));
+
+        String text = "      \n      \n      \n";
+        assertEquals(text, buffer.getScreenText());
+
+        buffer.write("G");
+        buffer.moveCursorDown(1);
+        buffer.moveCursorLeft(1);
+        buffer.write("H");
+        buffer.clearScreenScrollback();
+
+        String text2 = "G     \nH     \n      \n      \n      \n";
+        assertEquals(text2, buffer.getAllText());
+    }
+
+
 }
