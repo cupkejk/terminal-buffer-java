@@ -133,4 +133,34 @@ class TerminalBufferTest {
 
         assertEquals(testString, buffer.getAllText());
     }
+
+    @Test
+    @DisplayName("basic insertion test")
+    void insertionTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 5);
+
+        buffer.write("Hiii2Hiii3");
+        buffer.setCursorPosition(0, 0);
+        buffer.insert("Hiii1");
+        String testString = "Hiii1\nHiii2\nHiii3\n";
+
+        assertEquals(testString, buffer.getAllText());
+    }
+
+    @Test
+    @DisplayName("advanced insertion test")
+    void advancedInsertionTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 5);
+
+        buffer.write("Hiii2Hiii3");
+        buffer.setCursorPosition(0, 0);
+        buffer.insert("Hiii1");
+        buffer.setCursorPosition(0, 0);
+        buffer.insert("Hiii0");
+        String testString = "Hiii0\nHiii9\nHiii8\nHiii7\nHiii1\nHiii2\nHiii3\n";
+        buffer.setCursorPosition(0, 0);
+        buffer.insert("Hiii9Hiii8Hiii7");
+
+        assertEquals(testString, buffer.getAllText());
+    }
 }

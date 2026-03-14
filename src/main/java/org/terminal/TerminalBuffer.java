@@ -19,6 +19,7 @@ public class TerminalBuffer {
 
     private ArrayList<Line> screen;
     private Deque<Line> scrollback;
+    private LinkedList<Line> overflow;
 
     public TerminalBuffer(int width, int height, int scrollbackLines) {
         this.screenWidth = width;
@@ -37,6 +38,7 @@ public class TerminalBuffer {
             this.screen.add(new Line(width));
         }
         this.scrollback = new ArrayDeque<>();
+        this.overflow = new LinkedList<>();
     }
 
     public void moveCursor(int x, int y) {
@@ -123,7 +125,6 @@ public class TerminalBuffer {
         }
         if(this.cursorY == this.screenHeight) {
             this.scrollbackOnce();
-            this.cursorY--;
         }
     }
 
@@ -131,12 +132,19 @@ public class TerminalBuffer {
         Line firstLine = new Line(this.screen.getFirst());
 
         this.screen.removeFirst();
-        this.screen.add(new Line(this.screenWidth));
+        if(this.overflow.isEmpty()) {
+            this.screen.add(new Line(this.screenWidth));
+        }
+        else {
+            this.screen.add(new Line(this.overflow.getFirst()));
+            this.overflow.removeFirst();
+        }
 
         if(this.scrollback.size() == this.maxScrollbackLines) {
             this.scrollback.removeFirst();
         }
         this.scrollback.addLast(firstLine);
+        this.moveCursorUp(1);
     }
 
     public String getScreenText() {
@@ -170,15 +178,37 @@ public class TerminalBuffer {
     }
 
     private void moveChar(int from, int to) {
-        int[] coordsFrom = translateToCoordinates(from);
-        int[] coordsTo = translateToCoordinates(to);
-        Cell cellFrom = this.screen.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
+        if(to < this.screenWidth*this.screenHeight) {
+            int[] coordsFrom = translateToCoordinates(from);
+            int[] coordsTo = translateToCoordinates(to);
+            Cell cellFrom = this.screen.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
 
-        this.screen.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
+            this.screen.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
+            return;
+        }
+        else if(to >= this.screenWidth*this.screenHeight && from < this.screenWidth*this.screenHeight) {
+            to -= this.screenWidth*this.screenHeight;
+            int[] coordsFrom = translateToCoordinates(from);
+            int[] coordsTo = translateToCoordinates(to);
+            Cell cellFrom = this.screen.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
+
+            this.overflow.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
+        }
+        else {
+            to -= this.screenWidth*this.screenHeight;
+            from -= this.screenWidth*this.screenHeight;
+            int[] coordsFrom = translateToCoordinates(from);
+            int[] coordsTo = translateToCoordinates(to);
+            Cell cellFrom = this.overflow.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
+
+            this.overflow.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
+        }
+
+
     }
 
     private void moveBlock(int spaces, int from, int to) {
-        for(int i = spaces; i >= 0; i--) {
+        for(int i = spaces-1; i >= 0; i--) {
             moveChar(from + i, to + i);
         }
     }
@@ -192,10 +222,12 @@ public class TerminalBuffer {
         int moveFrom = 0;
         int moveTo = 0;
         int nCharacters = 0;
+        int additionalSpaceNeeded = 0;
 
         // Finding out if some of the text has to be moved
         for(int i = cursorPosition; i < cursorPosition+textLength; i++) {
             int[] currPos = translateToCoordinates(i);
+            if(i == screenHeight*screenWidth) break;
             if(!this.screen.get(currPos[1]).getCellAt(currPos[0]).isEmpty()) {
                 moveFrom = i;
                 needToMove = true;
@@ -207,21 +239,52 @@ public class TerminalBuffer {
         if(needToMove) {
             for(int i = moveFrom; spaceNeeded > spaceFound; i++) {
                 int[] currPos = translateToCoordinates(i);
-                if(this.screen.get(currPos[1]).getCellAt(currPos[0]).isEmpty()) {
-                    spaceFound++;
-                    nCharacters = i;
+                if(i < this.screenWidth*this.screenHeight) {
+                    if(this.screen.get(currPos[1]).getCellAt(currPos[0]).isEmpty()) {
+                        spaceFound++;
+                        nCharacters++;
+                    }
+                    else {
+                        spaceFound = 0;
+                        nCharacters++;
+                    }
                 }
                 else {
-                    spaceFound = 0;
+                    spaceFound++;
+                    nCharacters++;
                 }
+
             }
-            nCharacters = nCharacters - spaceFound + 1;
+            nCharacters = nCharacters - spaceFound;
             moveTo = moveFrom + spaceNeeded;
+
+            int newLinesNeeded = (moveTo+nCharacters-this.screenWidth*this.screenHeight)/this.screenWidth;
+
+            if(newLinesNeeded > 0) {
+                insertAdditionalLines(newLinesNeeded);
+            }
 
             moveBlock(nCharacters, moveFrom, moveTo);
         }
 
         write(text);
 
+        while(!this.overflow.isEmpty()) {
+            scrollbackOnce();
+        }
+    }
+
+    private void insertAdditionalLines(int n) {
+        for(int i = 0; i < n; i++) {
+            this.overflow.add(new Line(this.screenWidth));
+        }
+    }
+
+    public void fillLine(char character) {
+        this.screen.get(cursorY).fill(character, fgColor, bgColor, styles);
+    }
+
+    public void fillLine() {
+        this.screen.get(cursorY).fillEmpty(fgColor, bgColor, styles);
     }
 }

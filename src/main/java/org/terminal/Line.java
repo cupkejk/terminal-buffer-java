@@ -59,4 +59,23 @@ public class Line {
         }
         return text.toString() + '\n';
     }
+
+    public void fill(char character, Color fgColor, Color bgColor, Set<Style> styles) {
+        for(Cell cell : cells) {
+            cell.setCharacter(character);
+            cell.setFgColor(fgColor);
+            cell.setBgColor(bgColor);
+            cell.setStyles(styles);
+            cell.setIsCellEmpty(false);
+        }
+    }
+
+    public void fillEmpty(Color fgColor, Color bgColor, Set<Style> styles) {
+        for(Cell cell : cells) {
+            cell.setFgColor(fgColor);
+            cell.setBgColor(bgColor);
+            cell.setStyles(styles);
+            cell.setIsCellEmpty(true);
+        }
+    }
 }
