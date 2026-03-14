@@ -29,12 +29,13 @@ public class Line {
         }
     }
 
-    public void setCellAt(int index, char character, Color fgColor, Color bgColor, Set<Style> styles) {
+    public void setCellAt(int index, char character, Color fgColor, Color bgColor, Set<Style> styles, Boolean isCellEmpty) {
         Cell current = this.cells.get(index);
         current.setCharacter(character);
         current.setFgColor(fgColor);
         current.setBgColor(bgColor);
         current.setStyles(styles);
+        current.setIsCellEmpty(isCellEmpty);
     }
 
     public Cell getCellAt(int index) {

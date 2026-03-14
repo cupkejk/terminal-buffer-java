@@ -111,7 +111,7 @@ public class TerminalBuffer {
     }
 
     private void write(char character) {
-        this.screen.get(this.cursorY).setCellAt(this.cursorX, character, this.fgColor, this.bgColor, this.styles);
+        this.screen.get(this.cursorY).setCellAt(this.cursorX, character, this.fgColor, this.bgColor, this.styles, false);
         advanceCursor();
     }
 
@@ -154,5 +154,74 @@ public class TerminalBuffer {
         }
         text.append(this.getScreenText());
         return text.toString();
+    }
+
+    private int translateToNumber(int x, int y) {
+        return x + y*screenWidth;
+    }
+
+    private int[] translateToCoordinates(int num) {
+        int[] coords = new int[2];
+        int x = num%this.screenWidth;
+        int y = num/this.screenWidth;
+        coords[0] = x;
+        coords[1] = y;
+        return coords;
+    }
+
+    private void moveChar(int from, int to) {
+        int[] coordsFrom = translateToCoordinates(from);
+        int[] coordsTo = translateToCoordinates(to);
+        Cell cellFrom = this.screen.get(coordsFrom[1]).getCellAt(coordsFrom[0]);
+
+        this.screen.get(coordsTo[1]).setCellAt(coordsTo[0], cellFrom.getCharacter(), cellFrom.getFgColor(), cellFrom.getBgColor(), cellFrom.getStyles(), cellFrom.isEmpty());
+    }
+
+    private void moveBlock(int spaces, int from, int to) {
+        for(int i = spaces; i >= 0; i--) {
+            moveChar(from + i, to + i);
+        }
+    }
+
+    public void insert(String text) {
+        int cursorPosition = translateToNumber(this.cursorX, this.cursorY);
+        Boolean needToMove = false;
+        int textLength = text.length();
+        int spaceNeeded = textLength;
+        int spaceFound = 0;
+        int moveFrom = 0;
+        int moveTo = 0;
+        int nCharacters = 0;
+
+        // Finding out if some of the text has to be moved
+        for(int i = cursorPosition; i < cursorPosition+textLength; i++) {
+            int[] currPos = translateToCoordinates(i);
+            if(!this.screen.get(currPos[1]).getCellAt(currPos[0]).isEmpty()) {
+                moveFrom = i;
+                needToMove = true;
+                break;
+            }
+            spaceNeeded--;
+        }
+
+        if(needToMove) {
+            for(int i = moveFrom; spaceNeeded > spaceFound; i++) {
+                int[] currPos = translateToCoordinates(i);
+                if(this.screen.get(currPos[1]).getCellAt(currPos[0]).isEmpty()) {
+                    spaceFound++;
+                    nCharacters = i;
+                }
+                else {
+                    spaceFound = 0;
+                }
+            }
+            nCharacters = nCharacters - spaceFound + 1;
+            moveTo = moveFrom + spaceNeeded;
+
+            moveBlock(nCharacters, moveFrom, moveTo);
+        }
+
+        write(text);
+
     }
 }

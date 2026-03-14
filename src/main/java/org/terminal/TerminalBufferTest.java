@@ -89,4 +89,48 @@ class TerminalBufferTest {
         assertEquals(0, pos.column());
         assertEquals(1, pos.row());
     }
+
+    @Test
+    @DisplayName("basic writing test")
+    void writingTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
+
+        buffer.write("Hello");
+        buffer.setCursorPosition(0, 0);
+        buffer.write("Hi");
+
+        String testString = "Hillo\n     \n     \n";
+
+        assertEquals(testString, buffer.getScreenText());
+    }
+
+    @Test
+    @DisplayName("basic writing scrollback test")
+    void writingScrollbackTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
+
+        buffer.write("Hello");
+        buffer.setCursorPosition(0, 0);
+        buffer.write("Hi");
+        buffer.write("llo1234512345");
+
+        String testString = "Hillo\n12345\n12345\n     \n";
+
+        assertEquals(testString, buffer.getAllText());
+    }
+
+    @Test
+    @DisplayName("scrollback deletion test")
+    void writingScrollbackDeletionTest() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 2);
+
+        buffer.write("Hello");
+        buffer.setCursorPosition(0, 0);
+        buffer.write("Hi");
+        buffer.write("llo123451234554321Hello");
+
+        String testString = "12345\n12345\n54321\nHello\n     \n";
+
+        assertEquals(testString, buffer.getAllText());
+    }
 }

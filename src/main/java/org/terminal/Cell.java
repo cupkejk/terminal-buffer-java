@@ -54,6 +54,10 @@ public class Cell {
         this.styles = Set.copyOf(styles);
     }
 
+    public void setIsCellEmpty(Boolean isCellEmpty) {
+        this.isCellEmpty = isCellEmpty;
+    }
+
     public char getCharacter() {
         if(this.isCellEmpty) return '\0';
         return this.character;
